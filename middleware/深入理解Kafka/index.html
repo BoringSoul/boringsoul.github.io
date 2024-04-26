@@ -389,6 +389,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#214" class="md-nav__link">
+    <span class="md-ellipsis">
+      2.1.4 消息发送
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -431,6 +440,39 @@
   <a href="#23" class="md-nav__link">
     <span class="md-ellipsis">
       2.3 重要的生产者参数
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      3 消费者
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3 消费者">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.1 消费者与消费组
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2 客户端开发
     </span>
   </a>
   
@@ -581,6 +623,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#214" class="md-nav__link">
+    <span class="md-ellipsis">
+      2.1.4 消息发送
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -623,6 +674,39 @@
   <a href="#23" class="md-nav__link">
     <span class="md-ellipsis">
       2.3 重要的生产者参数
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      3 消费者
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3 消费者">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.1 消费者与消费组
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2 客户端开发
     </span>
   </a>
   
@@ -835,6 +919,15 @@ public interface Partitioner extends Configurable, Closeable {
 </code></pre>
 <p>主要看key是否为空，如果空的话调用 <em>stickyPartitionCache.partition</em>， 随机一个可用的分区来写入 <p>
 非空就用内置分区器，先用 <em>Utils.murmur2</em> 来 <em>hash</em>， 最后 % <em>numPartitions</em></p>
+<h4 id="214">2.1.4 消息发送</h4>
+<p>发送模式有三种: 发后即忘(<em>fire-and-forget</em>)、 同步 (<em>sync</em>)、 异步(<em>async</em>)，其实 <em>send</em> 返回的是 <em>Future</em> 对象，所以传参肯定有 <em>Callback</em> 的入参，要同步模式的话，直接 <em>Future.get</em> 即可。
+这里讲讲增加可靠性的套路</p>
+<blockquote>
+<p>注意： 提高可靠性会导致性能下降</p>
+</blockquote>
+<pre><code class="language-java">props.put(ProducerConfig.RETRIES_CONFIG, 10); // 增加重试次数
+props.put(ProducerConfig.ACKS_CONFIG, -1); //  确保所有副本有响应了才当成功
+</code></pre>
 <h3 id="22">2.2 原理分析</h3>
 <h4 id="221">2.2.1 整体架构</h4>
 <blockquote>
@@ -879,6 +972,20 @@ public interface Partitioner extends Configurable, Closeable {
 <li><em>recieve.buffer.byte</em>: 控制 <em>Socket</em> 接收缓冲区的大小, 默认值是 32768(<em>B</em>)=32<em>KB</em></li>
 <li><em>send.buffer.byte</em>: 控制 <em>Socket</em> 发送缓冲区的大小, 默认值是 131072(<em>B</em>)=128<em>KB</em></li>
 </ul>
+<h2 id="3">3 消费者</h2>
+<h3 id="31">3.1 消费者与消费组</h3>
+<blockquote>
+<p>看下图就知道大概意思了</p>
+</blockquote>
+<p><img alt="消费者与消费组消费某个Topic的消息" src="../assets/img/3.1.png" /></p>
+<p>消费者与消费组、分区的关系就以下几点：</p>
+<ol>
+<li>消费者是以分区为单位进行消费</li>
+<li>同一 <em>Topic</em> 下的消费组，里面的消费者会均摊 <em>Topic</em> 内的 <em>partition</em>，所以可能会出现 <em>partition</em> 不够分的情况</li>
+<li>消费组内的消费者，在消费同一 <em>topic</em> 下的消息，显然只会消费一次，相当于 <em>p2p</em> 模式</li>
+<li>如果是不同组的消费者，就相当于广播模式了</li>
+</ol>
+<h3 id="32">3.2 客户端开发</h3>
 
 
 
