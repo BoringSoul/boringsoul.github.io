@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="andrew chung" /><link rel="canonical" href="https://boringsoul.github.io/middleware/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Kafka/" />
       <link rel="shortcut icon" href="../../img/favicon.ico" />
     <title>深入理解Kafka：核心设计与实践原理 - 安崽的笔记</title>
     <link rel="stylesheet" href="../../css/theme.css" />
@@ -14,7 +14,7 @@
         // Current page data
         var mkdocs_page_name = "\u6df1\u5165\u7406\u89e3Kafka\uff1a\u6838\u5fc3\u8bbe\u8ba1\u4e0e\u5b9e\u8df5\u539f\u7406";
         var mkdocs_page_input_path = "middleware\\\u6df1\u5165\u7406\u89e3Kafka.md";
-        var mkdocs_page_url = null;
+        var mkdocs_page_url = "/middleware/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Kafka/";
       </script>
     
     <!--[if lt IE 9]>
@@ -42,7 +42,7 @@
 
       <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../..">简介</a>
+                <li class="toctree-l1"><a class="" href="../../../">简介</a>
                 </li>
               </ul>
               <p class="caption"><span class="caption-text">消息队列</span></p>
@@ -92,10 +92,27 @@
     <li class="toctree-l3"><a class="reference internal" href="#31">3.1 消费者与消费组</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#32">3.2 客户端开发</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#321">3.2.1 必要的参数配置</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#322_kafkaconsumer">3.2.2 KafkaConsumer 初始化源码</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#324">3.2.4 订阅主题与分区</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#325">3.2.5 消费者拦截器</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#326">3.2.6 反序列化</a>
+    </li>
+        </ul>
     </li>
         </ul>
     </li>
     </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">数据库相关</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../database/%E9%AB%98%E6%80%A7%E8%83%BDMySQL/">高性能MySQL-第三版</a>
                   </li>
               </ul>
       </div>
@@ -244,7 +261,7 @@ public class KafkaProducerDemo {
 }
 </code></pre>
 <h5 id="212">2.1.2 序列化器<a class="headerlink" href="#212" title="Permanent link">&para;</a></h5>
-<p>StringSerializer 源码如下</p>
+<p><em>StringSerializer</em> 源码如下</p>
 <pre><code class="language-java">package org.apache.kafka.common.serialization;
 
 import java.io.UnsupportedEncodingException;
@@ -302,7 +319,7 @@ public interface Partitioner extends Configurable, Closeable {
     }
 }
 </code></pre>
-<p>默认分区器 DefaultPartioner 源码是这样的</p>
+<p>默认分区器 <em>DefaultPartioner</em> 源码是这样的</p>
 <pre><code class="language-java">public int partition(String topic, Object key, byte[] keyBytes, Object value, byte[] valueBytes, Cluster cluster, int numPartitions) {
     return keyBytes == null ? this.stickyPartitionCache.partition(topic, cluster) : BuiltInPartitioner.partitionForKey(keyBytes, numPartitions);
 }
@@ -376,17 +393,193 @@ props.put(ProducerConfig.ACKS_CONFIG, -1); //  确保所有副本有响应了才
 <li>如果是不同组的消费者，就相当于广播模式了</li>
 </ol>
 <h4 id="32">3.2 客户端开发<a class="headerlink" href="#32" title="Permanent link">&para;</a></h4>
+<blockquote>
+<p>老规矩，先把抄的代码贴出来</p>
+</blockquote>
+<pre><code class="language-java">package org.example.consumer;
+
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+public class KafkaConsumerDemo {
+
+    public static final String BROKER_LIST = &quot;localhost:19092,localhost:29092,localhost:39092&quot;;
+    public static final String TOPIC = &quot;test&quot;;
+
+    private static final String GROUP_ID = &quot;group.demo&quot;;
+
+    public static final AtomicBoolean IS_RUNNING = new AtomicBoolean(true);
+
+    public static Map&lt;String, Object&gt; initConfig() {
+        Map&lt;String, Object&gt; props = new HashMap&lt;&gt;();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, BROKER_LIST);
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, &quot;org.apache.kafka.common.serialization.StringDeserializer&quot;);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, &quot;org.apache.kafka.common.serialization.StringDeserializer&quot;);
+        props.put(ConsumerConfig.CLIENT_ID_CONFIG, &quot;producer.client.id.demo&quot;);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, GROUP_ID);
+        return props;
+    }
+
+    public static void main(String[] args) {
+        try (KafkaConsumer&lt;String, String&gt; consumer = new KafkaConsumer&lt;&gt;(initConfig())) {
+            consumer.subscribe(List.of(TOPIC));
+            while (IS_RUNNING.get()) {
+                ConsumerRecords&lt;String, String&gt; records = consumer.poll(Duration.ofMillis(1000));
+                for (ConsumerRecord&lt;String, String&gt; record : records) {
+                    System.out.printf(&quot; TOPIC = %s, partition = %s, offset = %s, key = %s, value = %s \n&quot;,
+                            record.topic(), record.partition(), record.offset(), record.key(), record.value());
+                }
+            }
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+    }
+}
+</code></pre>
+<h5 id="321">3.2.1 必要的参数配置<a class="headerlink" href="#321" title="Permanent link">&para;</a></h5>
+<blockquote>
+<p>一般都是那几个了，有了生产者代码的经验之后，瞄一下就好了，还有就是生产上最好用 <em>ConsumerConfig</em> 的枚举，自己写容易出错</p>
+</blockquote>
+<ul>
+<li><em>bootstrap.server</em>: 连的 <em>kafka.brokers</em> 的列表</li>
+<li><em>group.id</em>: 就是消费者组 <em>id</em>, 如果是空的， 会提示 <em>To use the group management or offset commit APIs, you must provide a valid group.id in the consumer configuration.</em> ( <em>kafka-client v 3.7.0</em> )</li>
+<li><em>key.deserializer</em>: <em>key</em> 的反序列化器， 跟生产者的 <em>key.serializer</em> 反过来就行</li>
+<li><em>value.deserializer</em>: <em>value</em> 的反序列化器， 跟生产者的 <em>value.serializer</em> 反过来就行</li>
+</ul>
+<h5 id="322_kafkaconsumer">3.2.2 <em>KafkaConsumer</em> 初始化源码<a class="headerlink" href="#322_kafkaconsumer" title="Permanent link">&para;</a></h5>
+<blockquote>
+<p>这部分干货，原书没有的，我是在找拦截器触发时机的时候看源码，觉得挺有意思的，捞出来给大家分享</p>
+</blockquote>
+<p><em>KafkaConsumer</em> 这个类其实是用了代理模式生成了实际执行的 <em>KafkaConsumer</em> 对象</p>
+<pre><code class="language-java">public class KafkaConsumer&lt;K, V&gt; implements Consumer&lt;K, V&gt;{
+    KafkaConsumer(ConsumerConfig config, Deserializer&lt;K&gt; keyDeserializer, Deserializer&lt;V&gt; valueDeserializer) {
+        this.delegate = CREATOR.create(config, keyDeserializer, valueDeserializer);
+    }
+
+    KafkaConsumer(LogContext logContext, Time time, ConsumerConfig config, Deserializer&lt;K&gt; keyDeserializer, Deserializer&lt;V&gt; valueDeserializer, KafkaClient client, SubscriptionState subscriptions, ConsumerMetadata metadata, List&lt;ConsumerPartitionAssignor&gt; assignors) {
+        this.delegate = CREATOR.create(logContext, time, config, keyDeserializer, valueDeserializer, client, subscriptions, metadata, assignors);
+    }
+}
+</code></pre>
+<blockquote>
+<p>里面根据 <em>group.protocol</em> 生成两种消费者对象，一个是 <em>AsyncKafkaConsumer</em>, 一个是 <em>legacyKafkaConsumer</em></p>
+</blockquote>
+<pre><code class="language-java">public &lt;K, V&gt; ConsumerDelegate&lt;K, V&gt; create(ConsumerConfig config, Deserializer&lt;K&gt; keyDeserializer, Deserializer&lt;V&gt; valueDeserializer) {
+        try {
+            GroupProtocol groupProtocol = GroupProtocol.valueOf(config.getString(&quot;group.protocol&quot;).toUpperCase(Locale.ROOT));
+            return (ConsumerDelegate)(groupProtocol == GroupProtocol.CONSUMER ? new AsyncKafkaConsumer(config, keyDeserializer, valueDeserializer) : new LegacyKafkaConsumer(config, keyDeserializer, valueDeserializer));
+        } catch (KafkaException var5) {
+            throw var5;
+        } catch (Throwable var6) {
+            throw new KafkaException(&quot;Failed to construct Kafka consumer&quot;, var6);
+        }
+    }
+</code></pre>
+<h5 id="324">3.2.4 订阅主题与分区<a class="headerlink" href="#324" title="Permanent link">&para;</a></h5>
+<blockquote>
+<p>这一个章节主要讲的是 <em>subsribe()</em> 和 <em>assign()</em> 方法</p>
+</blockquote>
+<p>主题订阅支持的模式:</p>
+<ol>
+<li><em>AUTO_TOPICS</em>: 全名称匹配，但是需要传主题数组做为传参, </li>
+<li><em>AUTO_PATTERN</em>: 正则匹配模式</li>
+<li><em>USER_ASSIGNED</em>: 用户分配模式，分配指定 <em>topic</em> 下的 <em>partition</em></li>
+</ol>
+<p>主题订阅的时候可以传入再平衡的回调方法</p>
+<h5 id="325">3.2.5 消费者拦截器<a class="headerlink" href="#325" title="Permanent link">&para;</a></h5>
+<blockquote>
+<p>跟原书顺序不一样，我是按照代码执行顺序来讲的</p>
+<blockquote>
+<p>拦截器的作用其实跟其他框架都一样，都是给目标对象一个切面，在触发某些事件/动作的前后插入一些自定义的方法，先贴一下 <em>ConsumerInterceptor</em> 的接口源码</p>
+</blockquote>
+</blockquote>
+<pre><code class="language-java">public interface ConsumerInterceptor&lt;K, V&gt; extends Configurable, AutoCloseable {
+    ConsumerRecords&lt;K, V&gt; onConsume(ConsumerRecords&lt;K, V&gt; var1);
+
+    void onCommit(Map&lt;TopicPartition, OffsetAndMetadata&gt; var1);
+
+    void close();
+}
+</code></pre>
+<blockquote>
+<p><em>OnConsume</em> 方法触发时机在 <em>AsyncKafkaConsumer.poll()/LegacyKafakConsumer.poll()</em> 中，当执行了 <em>pollForFethces</em> 之后会返回 <em>fetch</em> 接着就执行 <em>onConsume(fetch.records())</em></p>
+</blockquote>
+<p>例子</p>
+<pre><code class="language-java">package org.example.consumer;
+
+import org.apache.kafka.clients.consumer.ConsumerInterceptor;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.common.TopicPartition;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class KafkaConsumerInterceptor implements ConsumerInterceptor&lt;String, String&gt; {
+
+    private static final long EXPIRE_INTERVAL = 10 * 1000;
+
+    @Override
+    public ConsumerRecords&lt;String, String&gt; onConsume(ConsumerRecords&lt;String, String&gt; records) {
+        long now = System.currentTimeMillis();
+        Map&lt;TopicPartition, List&lt;ConsumerRecord&lt;String, String&gt;&gt;&gt; newRecords = new HashMap&lt;&gt;();
+        for (TopicPartition tp : records.partitions()) {
+            List&lt;ConsumerRecord&lt;String, String&gt;&gt; list = records.records(tp);
+            List&lt;ConsumerRecord&lt;String, String&gt;&gt; filter = new ArrayList&lt;&gt;();
+            for (ConsumerRecord&lt;String, String&gt; i : list) {
+                if(now - i.timestamp() &lt;  EXPIRE_INTERVAL){
+                    filter.add(i);
+                }
+            }
+            newRecords.put(tp, filter);
+        }
+        return new ConsumerRecords&lt;&gt;(newRecords);
+    }
+
+    @Override
+    public void close() {
+
+    }
+
+    @Override
+    public void onCommit(Map map) {
+
+    }
+
+    /**
+     * configure不是直接继承自Interceptor的
+     *
+     * @param map 配置map
+     */
+    @Override
+    public void configure(Map&lt;String, ?&gt; map) {
+
+    }
+}
+</code></pre>
+<h5 id="326">3.2.6 反序列化<a class="headerlink" href="#326" title="Permanent link">&para;</a></h5>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../.." class="btn btn-neutral float-left" title="简介"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../../database/%E9%AB%98%E6%80%A7%E8%83%BDMySQL/" class="btn btn-neutral float-right" title="高性能MySQL-第三版">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
     <!-- Copyright etc -->
+      <p>MIT License</p>
   </div>
 
   Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
@@ -403,8 +596,8 @@ props.put(ProducerConfig.ACKS_CONFIG, -1); //  确保所有副本有响应了才
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="../.." style="color: #fcfcfc">&laquo; Previous</a></span>
     
+      <span><a href="../../database/%E9%AB%98%E6%80%A7%E8%83%BDMySQL/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>
