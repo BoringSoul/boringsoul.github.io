@@ -103,6 +103,20 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#326">3.2.6 反序列化</a>
     </li>
+    <li class="toctree-l4"><a class="reference internal" href="#327">3.2.7 消费消息</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#328">3.2.8 位移提交</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#329">3.2.9 控制或关闭消费</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#3210">3.2.10 指定位移消费</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#3211">3.2.11 再均衡</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#3212">3.2.12 多线程实现</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#3213">3.2.13 重要的消费者参数</a>
+    </li>
         </ul>
     </li>
         </ul>
@@ -144,7 +158,7 @@
 <h3 id="kafka">第一章 初识Kafka<a class="headerlink" href="#kafka" title="Permanent link">&para;</a></h3>
 <p>首先知道他是啥：</p>
 <ul>
-<li>消息系统： 就是一个消息队列系统，作用无非就那几个-解耦，削峰、异步，然后再加上自己的集群特性，做到可扩展、可恢复</li>
+<li>消息系统： 就是一个消息队列系统, 作用无非就那几个-解耦, 削峰、异步, 然后再加上自己的集群特性, 做到可扩展、可恢复</li>
 <li>持久化： log文件存消息</li>
 <li>流式处理平台：提供接口来做窗口、连接、变换和聚合等等的操作</li>
 </ul>
@@ -158,65 +172,71 @@
 <li><em>Broker</em> : 就是 <em>Kafka Server</em></li>
 <li><em>Consumer</em> : 消费者</li>
 <li><em>Message.Topic</em>: 消息是按Topic去分的</li>
-<li><em>Message.Topic.Partition</em> : <em>Topic</em> 划分为不同的分区存储，分区的数量、分配规则，能通过配置文件进行配置，同时还能在运行时，动态修改创建主题时的分区数量（只能增，不能减）、分配规则</li>
-<li><em>Message.Topic.Partition.Replicas</em>: 分区时有副本的，每个分区的副本数量，分配规则也是跟上面一样，可以静态设置，动态修改</li>
+<li><em>Message.Topic.Partition</em> : <em>Topic</em> 划分为不同的分区存储, 分区的数量、分配规则, 能通过配置文件进行配置, 同时还能在运行时, 动态修改创建主题时的分区数量（只能增, 不能减）、分配规则</li>
+<li><em>Message.Topic.Partition.Replicas</em>: 分区时有副本的, 每个分区的副本数量, 分配规则也是跟上面一样, 可以静态设置, 动态修改</li>
 <li><em>AR( Assigned Replicas )</em>, <em>ISR (In-Sync Replicas)</em>, <em>OSR (Out-Sync Replicas)</em> =&gt; <em>AR</em> = <em>ISR</em> + <em>OSR</em></li>
-<li>"Leader Replicas": 主副本， 负责读写</li>
-<li>"Follower Replica": 从副本，负责记录猪副本数据，有一定滞后性</li>
+<li>"Leader Replicas": 主副本,  负责读写</li>
+<li>"Follower Replica": 从副本, 负责记录猪副本数据, 有一定滞后性</li>
 <li><em>Message.Topic.Partition.Replica.LEO</em>: 该分区下一条消息待写入的 <em>Offset</em></li>
 <li><em>Message.Topic.Partition.Replica.HW</em>: <em>HW - 1</em> = 消费者能消费到的最大 <em>Offset</em></li>
 <li><em>Message.Topic.Partition.Log</em> : 在持久化层上可以把分区看成一个追加的 <em>Log</em> 文件</li>
-<li><em>Message.Topic.Partition.Offset</em> : 指消息在分区中的一个偏移量，且是分区中的唯一标识，也就是 <em>Kafka</em> 是分区内有序的</li>
+<li><em>Message.Topic.Partition.Offset</em> : 指消息在分区中的一个偏移量, 且是分区中的唯一标识, 也就是 <em>Kafka</em> 是分区内有序的</li>
 </ul>
 <h4 id="12">1.2 安装和配置<a class="headerlink" href="#12" title="Permanent link">&para;</a></h4>
 <blockquote>
-<p>3.x 版本安装比较简单，<em>windows/linux</em> 版本都是直接下个包，在本地跑脚本就好了</p>
+<p>3.x 版本安装比较简单, <em>windows/linux</em> 版本都是直接下个包, 在本地跑脚本就好了</p>
 </blockquote>
 <h4 id="13">1.3 生产和消费<a class="headerlink" href="#13" title="Permanent link">&para;</a></h4>
 <blockquote>
-<p>这部分代码在后面的章节是会贴出来了，这里就不再赘述了</p>
+<p>这部分代码在后面的章节是会贴出来了, 这里就不再赘述了</p>
 </blockquote>
 <h4 id="14">1.4 服务端参数配置<a class="headerlink" href="#14" title="Permanent link">&para;</a></h4>
 <blockquote>
-<p>这里贴出最常见的几个参数说明一下，配置的内容都是在 <em>config/server.properties</em> 里面，3.x 版本的话，如果要用 <em>kraft</em> 的话，则看 <em>config/kraft/server.properties</em> 文件</p>
+<p>这里贴出最常见的几个参数说明一下, 配置的内容都是在 <em>config/server.properties</em> 里面, 3.x 版本的话, 如果要用 <em>kraft</em> 的话, 则看 <em>config/kraft/server.properties</em> 文件</p>
 </blockquote>
 <ul>
-<li><em>process.roles</em> : 进程的角色列表，逗号分割，默认：<em>broker,controller</em></li>
-<li><em>node.id</em> : 节点 <em>id</em>，用来标识节点，在日志可以用来排查问题</li>
-<li><em>listeners</em> : <em>broker</em> 监听客户端的协议+地址+端口,格式为 : 协议://地址:端口，协议值为：<em>PLAINTEXT, SSL, SASL_SSL</em></li>
-<li><em>log.dirs</em> : 持久化目录，<em>log.dirs</em> 优先级大于 <em>log.dir</em></li>
+<li><em>process.roles</em> : 进程的角色列表, 逗号分割, 默认：<em>broker,controller</em></li>
+<li><em>node.id</em> : 节点 <em>id</em>, 用来标识节点, 在日志可以用来排查问题</li>
+<li><em>listeners</em> : <em>broker</em> 监听客户端的协议+地址+端口,格式为 : 协议://地址:端口, 协议值为：<em>PLAINTEXT, SSL, SASL_SSL</em></li>
+<li><em>log.dirs</em> : 持久化目录, <em>log.dirs</em> 优先级大于 <em>log.dir</em></li>
 </ul>
 <h3 id="_1">第二章：生产者<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h3>
 <h4 id="21">2.1 客户端开发<a class="headerlink" href="#21" title="Permanent link">&para;</a></h4>
 <blockquote>
-<p>这里我先贴整体的代码，然后再细说</p>
+<p>这里我先贴整体的代码, 然后再细说</p>
 </blockquote>
-<pre><code class="language-Java">package org.example;
+<pre><code class="language-Java">package org.example.producer;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.example.entity.UserProto;
 
 import java.util.Properties;
 
 public class KafkaProducerDemo {
 
-    public static final String brokerList = &quot;localhost:19092,localhost:29092,localhost:39092&quot;;
-    public static final String topic = &quot;test&quot;;
+    public static final String BROKER_LIST = &quot;localhost:19092,localhost:29092,localhost:39092&quot;;
+    public static final String TOPIC = &quot;test&quot;;
 
 
     public static Properties initConfig() {
         Properties props = new Properties();
-        props.put(&quot;bootstrap.servers&quot;, brokerList);
-        props.put(&quot;key.serializer&quot;, &quot;org.apache.kafka.common.serialization.StringSerializer&quot;);
-        props.put(&quot;value.serializer&quot;, &quot;org.apache.kafka.common.serialization.StringSerializer&quot;);
-        props.put(&quot;client.id&quot;, &quot;producer.client.id.demo&quot;);
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BROKER_LIST);
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, &quot;org.apache.kafka.common.serialization.StringSerializer&quot;);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaProducerSerializer.class.getName());
+        props.put(ProducerConfig.CLIENT_ID_CONFIG, &quot;producer.client.id.demo&quot;);
+        props.put(ProducerConfig.RETRIES_CONFIG, 10);
+        props.put(ProducerConfig.ACKS_CONFIG, &quot;-1&quot;);
+        props.put(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, KafkaProducerInterceptor.class.getName());
         return props;
     }
 
     public static void main(String[] args) {
         Properties props = initConfig();
-        try (KafkaProducer&lt;String, String&gt; producer = new KafkaProducer&lt;&gt;(props)) {
-            ProducerRecord&lt;String, String&gt; record = new ProducerRecord&lt;&gt;(topic, &quot;hello kafka&quot;);
+        try (KafkaProducer&lt;String, UserProto.User&gt; producer = new KafkaProducer&lt;&gt;(props)) {
+            UserProto.User user = UserProto.User.newBuilder().setName(&quot;andrew&quot;).setSex(1).setCode(&quot;c1&quot;).build();
+            ProducerRecord&lt;String, UserProto.User&gt; record = new ProducerRecord&lt;&gt;(TOPIC, user);
             producer.send(record);
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -236,7 +256,7 @@ public class KafkaProducerDemo {
 }
 </code></pre>
 <blockquote>
-<p>拦截器的注入方式是这样的，源码用反射<em>(getDeclaredConstructor().newInstance())</em>去实例化对象</p>
+<p>拦截器的注入方式是这样的, 源码用反射<em>(getDeclaredConstructor().newInstance())</em>去实例化对象</p>
 </blockquote>
 <pre><code class="language-java">props.put(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, KafkaProducerInterceptor.class.getName());
 </code></pre>
@@ -247,7 +267,7 @@ public class KafkaProducerDemo {
     return this.doSend(interceptedRecord, callback);
 }
 </code></pre>
-<p><em>onAcknoledgement</em> 则是在 703 行触发，就是在 <em>onComplete</em> 的时候调用</p>
+<p><em>onAcknoledgement</em> 则是在 703 行触发, 就是在 <em>onComplete</em> 的时候调用</p>
 <pre><code class="language-java">public void onCompletion(RecordMetadata metadata, Exception exception) {
     if (metadata == null) {
         metadata = new RecordMetadata(this.topicPartition(), -1L, -1, -1L, -1, -1);
@@ -298,8 +318,24 @@ public class StringSerializer implements Serializer&lt;String&gt; {
     }
 }
 </code></pre>
-<p>没啥特别，就是 <em>serialize</em> 里返回了 <em>string.getBytes()</em>
-自定义的也是一样，返回 <em>byte[]</em> 就好，反序列化道理一样</p>
+<p>没啥特别, 就是 <em>serialize</em> 里返回了 <em>string.getBytes()</em>
+自定义的也是一样, 返回 <em>byte[]</em> 就好, 反序列化道理一样</p>
+<blockquote>
+<p>一般公司都是pb来弄序列化和反序列化的, 以下是我自己的demo代码, 十分简单</p>
+</blockquote>
+<pre><code class="language-java">package org.example.producer;
+
+import org.apache.kafka.common.serialization.Serializer;
+import org.example.entity.UserProto;
+
+public class KafkaProducerSerializer implements Serializer&lt;UserProto.User&gt; {
+
+    @Override
+    public byte[] serialize(String s, UserProto.User user) {
+        return user.toByteArray();
+    }
+}
+</code></pre>
 <h5 id="213">2.1.3 分区器<a class="headerlink" href="#213" title="Permanent link">&para;</a></h5>
 <p>先看看源码定义</p>
 <pre><code class="language-java">package org.apache.kafka.clients.producer;
@@ -324,10 +360,10 @@ public interface Partitioner extends Configurable, Closeable {
     return keyBytes == null ? this.stickyPartitionCache.partition(topic, cluster) : BuiltInPartitioner.partitionForKey(keyBytes, numPartitions);
 }
 </code></pre>
-<p>主要看key是否为空，如果空的话调用 <em>stickyPartitionCache.partition</em>， 随机一个可用的分区来写入 <p>
-非空就用内置分区器，先用 <em>Utils.murmur2</em> 来 <em>hash</em>， 最后 % <em>numPartitions</em></p>
+<p>主要看key是否为空, 如果空的话调用 <em>stickyPartitionCache.partition</em>,  随机一个可用的分区来写入 <p>
+非空就用内置分区器, 先用 <em>Utils.murmur2</em> 来 <em>hash</em>,  最后 % <em>numPartitions</em></p>
 <h5 id="214">2.1.4 消息发送<a class="headerlink" href="#214" title="Permanent link">&para;</a></h5>
-<p>发送模式有三种: 发后即忘(<em>fire-and-forget</em>)、 同步 (<em>sync</em>)、 异步(<em>async</em>)，其实 <em>send</em> 返回的是 <em>Future</em> 对象，所以传参肯定有 <em>Callback</em> 的入参，要同步模式的话，直接 <em>Future.get</em> 即可。
+<p>发送模式有三种: 发后即忘(<em>fire-and-forget</em>)、 同步 (<em>sync</em>)、 异步(<em>async</em>), 其实 <em>send</em> 返回的是 <em>Future</em> 对象, 所以传参肯定有 <em>Callback</em> 的入参, 要同步模式的话, 直接 <em>Future.get</em> 即可。
 这里讲讲增加可靠性的套路</p>
 <blockquote>
 <p>注意： 提高可靠性会导致性能下降</p>
@@ -342,40 +378,40 @@ props.put(ProducerConfig.ACKS_CONFIG, -1); //  确保所有副本有响应了才
 </blockquote>
 <p><img alt="Kafka 生产者发送流程图" src="../assets/img/%E7%94%9F%E4%BA%A7%E8%80%85%E5%8F%91%E9%80%81%E6%B5%81%E7%A8%8B.png" /></p>
 <blockquote>
-<p>整体流程分两个线程完成，一个主线程，一个发送线程, 1-5 主线程完成 </p>
+<p>整体流程分两个线程完成, 一个主线程, 一个发送线程, 1-5 主线程完成 </p>
 </blockquote>
 <ol>
 <li>主线程通过 <em>KafkaProducer</em> 创建消息</li>
-<li>看客户端有没有实现 <em>ProducerIntercepter</em> 这个接口，如果有就对消息进行拦截处理，一般拦截是为了对消息做简单处理，因为太复杂会影响发送速度，同时这玩意是可以链式编程的，里面的 <em>onSend()</em> 在发送前触发, <em>onAcknowleagement()</em> 在 <em>Selector</em> 返回 <em>Response</em> 后马上触发？</li>
-<li>对消息的 <em>key</em>, <em>value</em> 进行序列化操作，要自定义，就实现 <em>org.apache.kafka.common.serlization.Seralizer</em> 接口， <em>configure()</em> 配置当前类，
-<em>serialize(String topic, T data)</em> 就是序列化方法，返回 <em>byte[]</em>, <em>close()</em> 用来关闭序列化器</li>
-<li>知道 <em>Topic</em> 了，就得知道消息往哪个分区发了，如果没有自定义分区器，那么就用默认方法来确定发送的分区，如果有就根据自定义的结果确定分区号</li>
-<li>主线程把消息缓存到对应的 <em>RecordAccumulator</em> 中， 数据结构是 <em>Map&lt;Partiion, Deque\<ProducerBatch\>></em> ，<em>buffer.memory</em> 控制大小，消息太多会阻塞发送方法， <em>max.block.ms</em> 控制阻塞等待时间，<em>batch.size</em> 控制 <em>ProducerBatch</em> 大小</li>
-<li><em>Sender</em> 线程创建 <em>Sender</em> 对象，把 <em>RecordAccumulator</em>.<em>Map&lt;Partiion, Deque\<ProducerBatch\>></em> 转换成 <em>Map&lt;Node, List\<ProducerBatch\>></em>，最后封成 <em><Node, Request></em> 对象</li>
-<li><em><Node, Request></em> 转成 <em>Map&lt;NodeId, Deque\<Request\>></em> 放到 <em>InFlightRequests</em> 中, 这玩意是用来记录发了，但没有响应的 <em>Request</em>， <em>max.in.flight.requests.per.connection</em> 默认为5，表示每个连接最大等待响应的请求数是5，超过5就不能发送了。还能根据 <em>Deque<Request>.size()</em> 来判断每个 <em>Node</em> 的负载情况</li>
+<li>看客户端有没有实现 <em>ProducerIntercepter</em> 这个接口, 如果有就对消息进行拦截处理, 一般拦截是为了对消息做简单处理, 因为太复杂会影响发送速度, 同时这玩意是可以链式编程的, 里面的 <em>onSend()</em> 在发送前触发, <em>onAcknowleagement()</em> 在 <em>Selector</em> 返回 <em>Response</em> 后马上触发？</li>
+<li>对消息的 <em>key</em>, <em>value</em> 进行序列化操作, 要自定义, 就实现 <em>org.apache.kafka.common.serlization.Seralizer</em> 接口,  <em>configure()</em> 配置当前类, 
+<em>serialize(String topic, T data)</em> 就是序列化方法, 返回 <em>byte[]</em>, <em>close()</em> 用来关闭序列化器</li>
+<li>知道 <em>Topic</em> 了, 就得知道消息往哪个分区发了, 如果没有自定义分区器, 那么就用默认方法来确定发送的分区, 如果有就根据自定义的结果确定分区号</li>
+<li>主线程把消息缓存到对应的 <em>RecordAccumulator</em> 中,  数据结构是 <em>Map&lt;Partiion, Deque\<ProducerBatch\>></em> , <em>buffer.memory</em> 控制大小, 消息太多会阻塞发送方法,  <em>max.block.ms</em> 控制阻塞等待时间, <em>batch.size</em> 控制 <em>ProducerBatch</em> 大小</li>
+<li><em>Sender</em> 线程创建 <em>Sender</em> 对象, 把 <em>RecordAccumulator</em>.<em>Map&lt;Partiion, Deque\<ProducerBatch\>></em> 转换成 <em>Map&lt;Node, List\<ProducerBatch\>></em>, 最后封成 <em><Node, Request></em> 对象</li>
+<li><em><Node, Request></em> 转成 <em>Map&lt;NodeId, Deque\<Request\>></em> 放到 <em>InFlightRequests</em> 中, 这玩意是用来记录发了, 但没有响应的 <em>Request</em>,  <em>max.in.flight.requests.per.connection</em> 默认为5, 表示每个连接最大等待响应的请求数是5, 超过5就不能发送了。还能根据 <em>Deque<Request>.size()</em> 来判断每个 <em>Node</em> 的负载情况</li>
 </ol>
 <h5 id="222">2.2.2 元数据更新<a class="headerlink" href="#222" title="Permanent link">&para;</a></h5>
 <blockquote>
-<p>元数据指的是各个节点的基本信息，包括节点地址、节点主题、节点的分区、分区 <em>leader/follower</em> 副本信息，<em>AR/ISR</em>, <em>Controller</em> 节点</p>
+<p>元数据指的是各个节点的基本信息, 包括节点地址、节点主题、节点的分区、分区 <em>leader/follower</em> 副本信息, <em>AR/ISR</em>, <em>Controller</em> 节点</p>
 </blockquote>
-<p>上述的元数据是通过 <em>Sender</em> 线程来更新的，更新步骤如下
+<p>上述的元数据是通过 <em>Sender</em> 线程来更新的, 更新步骤如下
 1. 找出 <em>leastLoadedNode</em> (<em>count</em> 一下 <em>InFlightRequests</em>.<em>Deque<Request>.size()</em>)
-2. 发送 <em>MetadataRequest</em>，然后缓存到 <em>InFlightRequests</em></p>
+2. 发送 <em>MetadataRequest</em>, 然后缓存到 <em>InFlightRequests</em></p>
 <h4 id="23">2.3 重要的生产者参数<a class="headerlink" href="#23" title="Permanent link">&para;</a></h4>
 <blockquote>
 <p>这些参数都是在创建 <em>Producer</em> 的时候放到 <em>props</em> 里面的</p>
 </blockquote>
 <ul>
 <li><em>ack</em>: <p> 
-        = 1 表示 <em>leader</em> 副本成功写入，就会收到来自服务端的写入成功响应，数据有可能会丢 <p>
+        = 1 表示 <em>leader</em> 副本成功写入, 就会收到来自服务端的写入成功响应, 数据有可能会丢 <p>
         = 0 表示不用等服务端任何响应。速度最快是它了, 但它最容易丢数据 <p>
         =-1 表示所有 <em>ISR</em> 成功写入才返回成功, 最大可靠性是它了</li>
-<li><em>max.request.size</em>: 客户端能发送消息的最大值，默认 1048576<em>B</em>=1<em>M</em>，必须 <em>&lt;= broker</em>.<em>message.max.size</em></li>
+<li><em>max.request.size</em>: 客户端能发送消息的最大值, 默认 1048576<em>B</em>=1<em>M</em>, 必须 <em>&lt;= broker</em>.<em>message.max.size</em></li>
 <li><em>retries</em>: 生产者重试次数</li>
-<li><em>retry.backoff.ms</em> : 重试之间的间隔，默认 100</li>
-<li><em>compression.type</em>: 消息压缩方式，默认 <em>none</em>，可以为 <em>gzip</em> <em>snappy</em> <em>lz4</em></li>
+<li><em>retry.backoff.ms</em> : 重试之间的间隔, 默认 100</li>
+<li><em>compression.type</em>: 消息压缩方式, 默认 <em>none</em>, 可以为 <em>gzip</em> <em>snappy</em> <em>lz4</em></li>
 <li><em>connections.max.idle.ms</em>: 每个限制连接最大存活时间</li>
-<li><em>linger.ms</em>: 发送 <em>ProducerBacth</em> 之前等待更多消息的时间，用来控制吞吐量的</li>
+<li><em>linger.ms</em>: 发送 <em>ProducerBacth</em> 之前等待更多消息的时间, 用来控制吞吐量的</li>
 <li><em>recieve.buffer.byte</em>: 控制 <em>Socket</em> 接收缓冲区的大小, 默认值是 32768(<em>B</em>)=32<em>KB</em></li>
 <li><em>send.buffer.byte</em>: 控制 <em>Socket</em> 发送缓冲区的大小, 默认值是 131072(<em>B</em>)=128<em>KB</em></li>
 </ul>
@@ -388,13 +424,13 @@ props.put(ProducerConfig.ACKS_CONFIG, -1); //  确保所有副本有响应了才
 <p>消费者与消费组、分区的关系就以下几点：</p>
 <ol>
 <li>消费者是以分区为单位进行消费</li>
-<li>同一 <em>Topic</em> 下的消费组，里面的消费者会均摊 <em>Topic</em> 内的 <em>partition</em>，所以可能会出现 <em>partition</em> 不够分的情况</li>
-<li>消费组内的消费者，在消费同一 <em>topic</em> 下的消息，显然只会消费一次，相当于 <em>p2p</em> 模式</li>
-<li>如果是不同组的消费者，就相当于广播模式了</li>
+<li>同一 <em>Topic</em> 下的消费组, 里面的消费者会均摊 <em>Topic</em> 内的 <em>partition</em>, 所以可能会出现 <em>partition</em> 不够分的情况</li>
+<li>消费组内的消费者, 在消费同一 <em>topic</em> 下的消息, 显然只会消费一次, 相当于 <em>p2p</em> 模式</li>
+<li>如果是不同组的消费者, 就相当于广播模式了</li>
 </ol>
 <h4 id="32">3.2 客户端开发<a class="headerlink" href="#32" title="Permanent link">&para;</a></h4>
 <blockquote>
-<p>老规矩，先把抄的代码贴出来</p>
+<p>老规矩, 先把抄的代码贴出来</p>
 </blockquote>
 <pre><code class="language-java">package org.example.consumer;
 
@@ -402,6 +438,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.example.entity.UserProto;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -422,18 +459,21 @@ public class KafkaConsumerDemo {
         Map&lt;String, Object&gt; props = new HashMap&lt;&gt;();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, BROKER_LIST);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, &quot;org.apache.kafka.common.serialization.StringDeserializer&quot;);
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, &quot;org.apache.kafka.common.serialization.StringDeserializer&quot;);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaConsumerDeserializer.class.getName());
         props.put(ConsumerConfig.CLIENT_ID_CONFIG, &quot;producer.client.id.demo&quot;);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, GROUP_ID);
+
+        //额外功能
+        props.put(ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, KafkaConsumerInterceptor.class.getName());
         return props;
     }
 
     public static void main(String[] args) {
-        try (KafkaConsumer&lt;String, String&gt; consumer = new KafkaConsumer&lt;&gt;(initConfig())) {
+        try (KafkaConsumer&lt;String, UserProto.User&gt; consumer = new KafkaConsumer&lt;&gt;(initConfig())) {
             consumer.subscribe(List.of(TOPIC));
             while (IS_RUNNING.get()) {
-                ConsumerRecords&lt;String, String&gt; records = consumer.poll(Duration.ofMillis(1000));
-                for (ConsumerRecord&lt;String, String&gt; record : records) {
+                ConsumerRecords&lt;String, UserProto.User&gt; records = consumer.poll(Duration.ofMillis(1000));
+                for (ConsumerRecord&lt;String, UserProto.User&gt; record : records) {
                     System.out.printf(&quot; TOPIC = %s, partition = %s, offset = %s, key = %s, value = %s \n&quot;,
                             record.topic(), record.partition(), record.offset(), record.key(), record.value());
                 }
@@ -443,20 +483,21 @@ public class KafkaConsumerDemo {
         }
     }
 }
+
 </code></pre>
 <h5 id="321">3.2.1 必要的参数配置<a class="headerlink" href="#321" title="Permanent link">&para;</a></h5>
 <blockquote>
-<p>一般都是那几个了，有了生产者代码的经验之后，瞄一下就好了，还有就是生产上最好用 <em>ConsumerConfig</em> 的枚举，自己写容易出错</p>
+<p>一般都是那几个了, 有了生产者代码的经验之后, 瞄一下就好了, 还有就是生产上最好用 <em>ConsumerConfig</em> 的枚举, 自己写容易出错</p>
 </blockquote>
 <ul>
 <li><em>bootstrap.server</em>: 连的 <em>kafka.brokers</em> 的列表</li>
-<li><em>group.id</em>: 就是消费者组 <em>id</em>, 如果是空的， 会提示 <em>To use the group management or offset commit APIs, you must provide a valid group.id in the consumer configuration.</em> ( <em>kafka-client v 3.7.0</em> )</li>
-<li><em>key.deserializer</em>: <em>key</em> 的反序列化器， 跟生产者的 <em>key.serializer</em> 反过来就行</li>
-<li><em>value.deserializer</em>: <em>value</em> 的反序列化器， 跟生产者的 <em>value.serializer</em> 反过来就行</li>
+<li><em>group.id</em>: 就是消费者组 <em>id</em>, 如果是空的,  会提示 <em>To use the group management or offset commit APIs, you must provide a valid group.id in the consumer configuration.</em> ( <em>kafka-client v 3.7.0</em> )</li>
+<li><em>key.deserializer</em>: <em>key</em> 的反序列化器,  跟生产者的 <em>key.serializer</em> 反过来就行</li>
+<li><em>value.deserializer</em>: <em>value</em> 的反序列化器,  跟生产者的 <em>value.serializer</em> 反过来就行</li>
 </ul>
 <h5 id="322_kafkaconsumer">3.2.2 <em>KafkaConsumer</em> 初始化源码<a class="headerlink" href="#322_kafkaconsumer" title="Permanent link">&para;</a></h5>
 <blockquote>
-<p>这部分干货，原书没有的，我是在找拦截器触发时机的时候看源码，觉得挺有意思的，捞出来给大家分享</p>
+<p>这部分干货, 原书没有的, 我是在找拦截器触发时机的时候看源码, 觉得挺有意思的, 捞出来给大家分享</p>
 </blockquote>
 <p><em>KafkaConsumer</em> 这个类其实是用了代理模式生成了实际执行的 <em>KafkaConsumer</em> 对象</p>
 <pre><code class="language-java">public class KafkaConsumer&lt;K, V&gt; implements Consumer&lt;K, V&gt;{
@@ -470,7 +511,7 @@ public class KafkaConsumerDemo {
 }
 </code></pre>
 <blockquote>
-<p>里面根据 <em>group.protocol</em> 生成两种消费者对象，一个是 <em>AsyncKafkaConsumer</em>, 一个是 <em>legacyKafkaConsumer</em></p>
+<p>里面根据 <em>group.protocol</em> 生成两种消费者对象, 一个是 <em>AsyncKafkaConsumer</em>, 一个是 <em>legacyKafkaConsumer</em></p>
 </blockquote>
 <pre><code class="language-java">public &lt;K, V&gt; ConsumerDelegate&lt;K, V&gt; create(ConsumerConfig config, Deserializer&lt;K&gt; keyDeserializer, Deserializer&lt;V&gt; valueDeserializer) {
         try {
@@ -489,16 +530,16 @@ public class KafkaConsumerDemo {
 </blockquote>
 <p>主题订阅支持的模式:</p>
 <ol>
-<li><em>AUTO_TOPICS</em>: 全名称匹配，但是需要传主题数组做为传参, </li>
+<li><em>AUTO_TOPICS</em>: 全名称匹配, 但是需要传主题数组做为传参, </li>
 <li><em>AUTO_PATTERN</em>: 正则匹配模式</li>
-<li><em>USER_ASSIGNED</em>: 用户分配模式，分配指定 <em>topic</em> 下的 <em>partition</em></li>
+<li><em>USER_ASSIGNED</em>: 用户分配模式, 分配指定 <em>topic</em> 下的 <em>partition</em></li>
 </ol>
 <p>主题订阅的时候可以传入再平衡的回调方法</p>
 <h5 id="325">3.2.5 消费者拦截器<a class="headerlink" href="#325" title="Permanent link">&para;</a></h5>
 <blockquote>
-<p>跟原书顺序不一样，我是按照代码执行顺序来讲的</p>
+<p>跟原书顺序不一样, 我是按照代码执行顺序来讲的</p>
 <blockquote>
-<p>拦截器的作用其实跟其他框架都一样，都是给目标对象一个切面，在触发某些事件/动作的前后插入一些自定义的方法，先贴一下 <em>ConsumerInterceptor</em> 的接口源码</p>
+<p>拦截器的作用其实跟其他框架都一样, 都是给目标对象一个切面, 在触发某些事件/动作的前后插入一些自定义的方法, 先贴一下 <em>ConsumerInterceptor</em> 的接口源码</p>
 </blockquote>
 </blockquote>
 <pre><code class="language-java">public interface ConsumerInterceptor&lt;K, V&gt; extends Configurable, AutoCloseable {
@@ -510,7 +551,7 @@ public class KafkaConsumerDemo {
 }
 </code></pre>
 <blockquote>
-<p><em>OnConsume</em> 方法触发时机在 <em>AsyncKafkaConsumer.poll()/LegacyKafakConsumer.poll()</em> 中，当执行了 <em>pollForFethces</em> 之后会返回 <em>fetch</em> 接着就执行 <em>onConsume(fetch.records())</em></p>
+<p><em>OnConsume</em> 方法触发时机在 <em>AsyncKafkaConsumer.poll()/LegacyKafakConsumer.poll()</em> 中, 当执行了 <em>pollForFethces</em> 之后会返回 <em>fetch</em> 接着就执行 <em>onConsume(fetch.records())</em></p>
 </blockquote>
 <p>例子</p>
 <pre><code class="language-java">package org.example.consumer;
@@ -568,6 +609,133 @@ public class KafkaConsumerInterceptor implements ConsumerInterceptor&lt;String, 
 }
 </code></pre>
 <h5 id="326">3.2.6 反序列化<a class="headerlink" href="#326" title="Permanent link">&para;</a></h5>
+<blockquote>
+<p>反序列化的话只需要继承 <em>Deserializer</em> 的 <em>deserialize(String topic, byte[] data)</em> 方法即可
+一般生产都是用 <em>ProtocalBuffer</em> 去做序列化和反序列化的, 最简单的 <em>demo</em> 如下</p>
+</blockquote>
+<pre><code class="language-java">package org.example.consumer;
+
+import com.google.protobuf.InvalidProtocolBufferException;
+import org.apache.kafka.common.serialization.Deserializer;
+import org.example.entity.UserProto;
+
+public class KafkaConsumerDeserializer implements Deserializer&lt;UserProto.User&gt; {
+
+    @Override
+    public UserProto.User deserialize(String topic, byte[] data) {
+        try {
+            return UserProto.User.parseFrom(data);
+        } catch (InvalidProtocolBufferException e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+</code></pre>
+<h5 id="327">3.2.7 消费消息<a class="headerlink" href="#327" title="Permanent link">&para;</a></h5>
+<blockquote>
+<p>这一节主要讲的是 <em>poll</em> 方法</p>
+</blockquote>
+<p>这个 <em>poll()</em> 方法是个轮训方法, 传参 <em>Duration</em> 是指拉去线程的最大阻塞时间(因为没有消息可能得等嘛) <p>
+然后返回的 ConsumerRecords 对象呢是可以迭代的</p>
+<h5 id="328">3.2.8 位移提交<a class="headerlink" href="#328" title="Permanent link">&para;</a></h5>
+<blockquote>
+<p>这一节主要讲的是各个 <em>offset</em> 的区别以及提交 <em>offset</em> 的一些技巧</p>
+</blockquote>
+<p>消费者在完成消费之后其实是需要提交 <em>offset</em> (告诉 <em>broker</em> 消费到哪里了) <p></p>
+<p><em>offset</em> 有三个概念 <p></p>
+<p><em>consumed offset</em> = <em>last consumed offset</em> = <em>position()</em> =  <em>commited offset</em>  - 1 <p></p>
+<p>每次提交的都是下个消费的 <em>offset</em> <p></p>
+<p>其实无论怎么提交位移量, 都存在着重复消费和消息丢失的风险 <p></p>
+<p><em>commit</em> 分 <em>sync</em> 和 <em>async</em>,  <em>async</em> 时有个回调方法, 是在 <em>commit</em> 完成后触发, 生产一般用于更改缓存/数据库中对应数据状态 <p></p>
+<p>降低上面两个风险的做法就是 <p></p>
+<ol>
+<li>自己手动提交,  enable.auto.commit = false</li>
+<li>提交 <em>offset</em> 需要有重试机制（可以在 <em>finally</em> 块中使用同步提交）, 防止提交失败 （但会有重复消费的风险）</li>
+<li>自己做幂等性处理, 即使重复消费也不慌</li>
+</ol>
+<h5 id="329">3.2.9 控制或关闭消费<a class="headerlink" href="#329" title="Permanent link">&para;</a></h5>
+<blockquote>
+<p>其实就是讲了 <em>pause()</em> / <em>resume()</em> / <em>close()</em> / <em>wakeup()</em> 方法</p>
+</blockquote>
+<ol>
+<li>
+<p>因为 <em>idea</em> 会提示创建 <em>KafkaConsumer</em> 实例建议用 <em>try(resource)</em> 创建, 所以可以优雅关闭 <em>consumer</em> <p></p>
+</li>
+<li>
+<p>因为示例代码中的无限循环的判断条件是 <em>running.get()</em>, 所以也可以优雅退出循环</p>
+</li>
+<li>
+<p><em>wakeup()</em> 是通过抛出异常( <em>WakeupException</em> )来中断消费的, 所以要注意</p>
+</li>
+</ol>
+<h5 id="3210">3.2.10 指定位移消费<a class="headerlink" href="#3210" title="Permanent link">&para;</a></h5>
+<blockquote>
+<p><em>auto.offset.reset</em> 粗粒度控制消费起始位置, <em>consumer.seek()</em></p>
+</blockquote>
+<ol>
+<li>
+<p><em>seek()</em> 方法可以指定从某个主题下的某个分区的 <em>offfset</em> 进行消费, 如果找不到位移, 就触发 <em>auto.offset.reset</em> </p>
+</li>
+<li>
+<p><em>auto.offset.reset</em> = <em>earliest</em>/<em>latest</em>/<em>none</em> <p></p>
+</li>
+</ol>
+<p><em>earliest</em> 从 0 开始消费
+<em>latest</em> 从分区末尾开始消费
+<em>none</em> 找不到消费位移的时候就抛异常</p>
+<ol>
+<li>
+<p>可以通过 <em>beginOffsets()</em> / <em>endOffsets()</em> / <em>seekToBegin()</em> / <em>seekToEnd()</em> 找到头尾位置进行消费</p>
+</li>
+<li>
+<p>可通过 <em>consuemr.offsetForTimess( Map<TopciPartition, Long> )</em> 查找对应的 <em>offset</em>, 然后通过 <em>seek()</em> 定位消费</p>
+</li>
+</ol>
+<h5 id="3211">3.2.11 再均衡<a class="headerlink" href="#3211" title="Permanent link">&para;</a></h5>
+<blockquote>
+<p>指的是分区所属权从一个消费者转移到另一个消费者的行为, 其实就是发生在消费者组发生变化的时候（组内成员有增减）, 应该怎么处理</p>
+</blockquote>
+<ol>
+<li>再均衡发生期间, 相关的消费者是无法消费的（即对应消费者组内的消费者不可用）</li>
+<li>分区重分配的时候, 当前消费者的状态会丢失, 其实就是<em>A</em>消费到一半的时候, 分区又给<em>B</em>消费, 如果消费位移没提交, 就可能重复消费</li>
+<li>
+<p>再均衡监听器有两个方法来规避这种问题 <p>
+   1) <em>onPartitionsRevoke(Collcetion<TopciPartition>)</em> <p></p>
+<p>消费者停止消费后, 重分配之前触发 (这里提交已消费完的 <em>offset</em>, 本地保存)</p>
+</li>
+</ol>
+<p>2) <em>onPartitionsAssigned(partitions)</em> <p></p>
+<pre><code>   重分配之后, 消费者开始消费之前触发 (本地保存的 *offset* 找出来, 再 *seek* )
+</code></pre>
+<h5 id="3212">3.2.12 多线程实现<a class="headerlink" href="#3212" title="Permanent link">&para;</a></h5>
+<blockquote>
+<p><em>KafkaProducer</em> 是线程安全的, <em>KafkaConsumer</em> 是线程不安全的, 这一节主要讲消费者如何多线程消费</p>
+<p>注意, 如果生产中对消息的顺序性有要求, 不建议使用多线程消费同一分区的数据, 因为还得自己维护数据的有序性</p>
+</blockquote>
+<p>实现方式分以下几种</p>
+<ol>
+<li>线程封闭, 实例化多个 <em>Consumer</em> 对象进行消费</li>
+<li>多线程消费同一个分区（不推荐）</li>
+<li>包装 <em>ThreadPool</em> 和 <em>Consumer</em>, 把 <em>poll()</em> 到的 <em>Record</em> 扔到 <em>ThreadPool</em> 里面, 就是一个 <em>Consumer</em> 拉取某个主题, 多线程消费</li>
+</ol>
+<p>第三个方案需要注意的是 <em>offset</em> 提交问题, 可以用滑窗/<em>AQS</em>去解决这个问题</p>
+<h5 id="3213">3.2.13 重要的消费者参数<a class="headerlink" href="#3213" title="Permanent link">&para;</a></h5>
+<ol>
+<li><em>fetch.min.bytes</em> = 每次拉取最小数据量, 控制吞吐用的</li>
+<li><em>fetch.max.bytes</em> = 每次拉取最大数据量, 消息大于该值也不会导致消息不可读</li>
+<li><em>fetch.max.wait.ms</em> = 每次拉取最大等待时间, 也是控制吞吐, 具体看实际应用场景</li>
+<li><em>max.partition.fetch.bytes</em> = 每个分区每次返回给 <em>Consumer</em> 的最大数据量, 指的是 <em>fetch.bytes / partition_num</em></li>
+<li><em>max.poll.record</em> = 拉取最大消息数, 默认500条</li>
+<li><em>connections.max.idle.ms</em> = 多久之后关闭限制连接, 默认 540000 <em>ms</em>, 就是 9 <em>min</em></li>
+<li><em>exclude.internal.topics</em> = 是否屏蔽内部主题, 默认是 <em>true</em>, 表示不能用正则去订阅主题, <em>false</em> 则相反</li>
+<li><em>receives.buffer.bytes</em> = 接收缓冲区大小, 默认 65536 <em>B</em>, 就是 64 <em>KB</em></li>
+<li><em>send.buffer.size</em> = 发送缓冲区大小, 默认 131072 <em>B</em>, 就是 128 <em>KB</em></li>
+<li><em>request.timeout.ms</em> = 等待请求响应的最长时间, 默认 30000 <em>ms</em></li>
+<li><em>metadata.max.age.ms</em> = 等待请求响应的最长时间, 默认 30000 <em>ms</em></li>
+<li><em>reconnect.backoff.ms</em> = 等待请求响应的最长时间, 默认 30000 <em>ms</em></li>
+<li><em>retry.backo ms</em> = 等待请求响应的最长时间, 默认 30000 <em>ms</em></li>
+<li><em>isolation.level</em> = 事务隔离等级, <em>value = "read_uncommitted/read_commiitted"</em>, 默认是 <em>read_uncommitted</em>, 可以消费到 <em>HW</em></li>
+</ol>
               
             </div>
           </div><footer>
