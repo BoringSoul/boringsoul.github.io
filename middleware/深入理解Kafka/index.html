@@ -121,6 +121,36 @@
     </li>
         </ul>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#_3">第四章 主题与分区</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#41">4.1 主题的管理</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#411">4.1.1 创建主题</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#412">4.1.2 分区副本的创建</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#413">4.1.3 查看主题</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#414">4.1.4 修改主题</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#415">4.1.5 配置管理</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#416">4.1.6 主题端参数</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#417">4.1.7 删除主题</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#418_zk">4.1.8 zk 节点信息速查</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#42_kafkaadminclient">4.2 初识 KafkaAdminClient</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#421_kafka">4.2.1 Kafka 基本使用</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
     </ul>
                   </li>
               </ul>
@@ -736,6 +766,172 @@ public class KafkaConsumerDeserializer implements Deserializer&lt;UserProto.User
 <li><em>retry.backo ms</em> = 等待请求响应的最长时间, 默认 30000 <em>ms</em></li>
 <li><em>isolation.level</em> = 事务隔离等级, <em>value = "read_uncommitted/read_commiitted"</em>, 默认是 <em>read_uncommitted</em>, 可以消费到 <em>HW</em></li>
 </ol>
+<h3 id="_3">第四章 主题与分区<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<h4 id="41">4.1 主题的管理<a class="headerlink" href="#41" title="Permanent link">&para;</a></h4>
+<blockquote>
+<p>主题管理可以用 <em>kafka-topics.sh(bat)</em> 来管理, 当然还能用 <em>KafkaAdminClient</em> 来实现。</p>
+</blockquote>
+<h5 id="411">4.1.1 创建主题<a class="headerlink" href="#411" title="Permanent link">&para;</a></h5>
+<ol>
+<li>如果 <em>auto.create.otpics.enable</em> = <em>true</em>, 客户端(生产者/消费者)会在没有创建对应主题的下, 根据 <em>num.partitions</em> 和 <em>default.replication.facotr</em> 来创建主题, 命令如下 <p></li>
+</ol>
+<pre><code class="language-shell">kafka-topics.sh --zookeeper &lt;String : hosts&gt; -create topic [String: topic] --partitions &lt;分区数量&gt; replication-factor &lt;副本数量&gt; 
+</code></pre>
+<ol>
+<li><em>replica-assignment</em> 命令, 还能指定副本分配</li>
+</ol>
+<pre><code class="language-shell">## 假如 partition_num = 3, replica_nums = 2,  格式如下,  第一个是 *part1* 所在的 *broker*,  以此类推
+--replica-assignment &lt;brokerId1:brokerId2, brokerId2:brokerId3, brokerId3:brokerId1......&gt; 
+</code></pre>
+<blockquote>
+<p>分区同一 <em>part</em> 必须放在不同 <em>broker</em> 中, 否则会报异常</p>
+</blockquote>
+<ol>
+<li><em>--config</em> 为指定 <em>topic</em> 设置参数</li>
+</ol>
+<pre><code class="language-shell">--config &lt;key=value&gt; --config &lt;key=value&gt;...
+</code></pre>
+<ol>
+<li>
+<p>建完主题后, 它会在 <em>dir.logs</em>/<em>dir.log</em> 创下对应的主题和分区, 一般命名格式为 <em>\&lt;topic&gt;-\&lt;partition&gt;</em></p>
+</li>
+<li>
+<p><em>topic</em> 具有唯一性</p>
+</li>
+<li>
+<p>获取元数据信息就能知道主题、分区、配置情况, 如果是连了 <em>zookeeper</em> 的话, 则可以看节点信息获取这些情况</p>
+</li>
+</ol>
+<h5 id="412">4.1.2 分区副本的创建<a class="headerlink" href="#412" title="Permanent link">&para;</a></h5>
+<p>自动创建的原理</p>
+<ol>
+<li>轮询 <em>partition</em>,  然后每次先随机个 <em>startIndex</em>, <em>nextReplicaShift</em></li>
+<li><em>startIndex</em> 算出第一个副本索引 <em>firstReplicaIndex</em>, 然后 brokerIds[index] 就是副本落到的broker了</li>
+<li><em>fristReplicaIndex</em>, <em>nextReplicaShift</em> 作为传参, 又传到函数 <em>prelicaIndex</em> 里面, 得到第二个 <em>index</em></li>
+<li>循环操作</li>
+</ol>
+<h5 id="413">4.1.3 查看主题<a class="headerlink" href="#413" title="Permanent link">&para;</a></h5>
+<blockquote>
+<p>describe 指令查看主题信息, 可额外增加 <em>topics-with-overrides</em>(覆盖默认配置的主题), <em>under-replicated-partitions</em>(查找失效副本), <em>unavailable-partitions</em>(查找不可用副本)</p>
+</blockquote>
+<h5 id="414">4.1.4 修改主题<a class="headerlink" href="#414" title="Permanent link">&para;</a></h5>
+<blockquote>
+<p>基本用 <em>kafka-configs.sh</em> 中的 <em>alert</em> 方法来修改主题, 不支持减少分区</p>
+</blockquote>
+<h5 id="415">4.1.5 配置管理<a class="headerlink" href="#415" title="Permanent link">&para;</a></h5>
+<blockquote>
+<p>基本讲 <em>kafka-configs.sh</em> 脚本的用法</p>
+</blockquote>
+<p><em>example</em> : 删除某个 <em>topic</em> 下的配置</p>
+<pre><code class="language-shell">kafka-configs.sh --zookeeper &lt;zk地址&gt; --alter --entity-type topics --entity-name topic-config --delete-config
+cleanup.policy,max.message.bytes
+</code></pre>
+<h5 id="416">4.1.6 主题端参数<a class="headerlink" href="#416" title="Permanent link">&para;</a></h5>
+<p>格式: 主题端参数 - 对应 <em>broker</em> 的参数 = 释义</p>
+<p>cleanup.policy - log.cleanup.policy = 日志压缩策略, 默认 <em>delete</em>, 可为 <em>compact</em> <p>
+compression.type - compression.type = 压缩类型, 默认 <em>producer</em>, 保留为生产者使用的原始压缩, 可为 <em>uncompressed/snappy/gzip/lz4</em> <p>
+delete.retention.ms - log.cleaner.delete.retention.ms = 标记为删除的数据保留的时间, 默认86400000, 就是一天 <p>
+file.delete.delay.ms - log.segment.delete.delay.ms = 清理文件前等待的时间, 默认60000, 即1分钟 <p>
+flush.message - log.flush.interval.messages = 需要收集多少数据才强制刷盘, 默认由操作系统决定，不建议更改, 值为 <em>Long.MAX_VALUE</em> <p>
+flush.ms - log.flush.interval.ms = 需要等待多久才强制落盘，默认也是操作系统决定 <p>
+follower.replication.throttled - follower.replication.throttled = 配置被限制速率的主题所以对应的 <em>follower</em> 副本列表 <p>
+index.interval.bytes - log.index.interval.bytes = 控制添加索引的频率, 默认 4096, 消息字节数超过这个值就会创建索引 <p>
+leader.replication.throttled - leader.replication.throttled = 配置被限制速率的主题所以对应的 <em>leader</em> 副本列表
+.....</p>
+<h5 id="417">4.1.7 删除主题<a class="headerlink" href="#417" title="Permanent link">&para;</a></h5>
+<p><em>kafka-topics.sh</em> 脚本操作的话就是这样的</p>
+<pre><code class="language-shell">kafka-topics.sh --zookeeper &lt;zk地址&gt; --delete --topic topic-delete
+</code></pre>
+<p><em>zkCli.sh</em> 操作是这样的</p>
+<pre><code class="language-shell">
+rmr /config/topics/&lt;topic-name&gt;
+delete /brokers/topics/&lt;topic-name&gt;
+</code></pre>
+<h5 id="418_zk">4.1.8 <em>zk</em> 节点信息速查<a class="headerlink" href="#418_zk" title="Permanent link">&para;</a></h5>
+<p><em>/brokers/topics/<topic-name></em> : <em>brokers</em> 中的创建的 <em>topics</em>
+<em>/config/topics/[topic名]</em> : 查看指定 <em>topic</em> 的设置</p>
+<h4 id="42_kafkaadminclient">4.2 初识 <em>KafkaAdminClient</em><a class="headerlink" href="#42_kafkaadminclient" title="Permanent link">&para;</a></h4>
+<h5 id="421_kafka">4.2.1 Kafka 基本使用<a class="headerlink" href="#421_kafka" title="Permanent link">&para;</a></h5>
+<p>基本功能如下</p>
+<ol>
+<li>创建主题: CreateTopicsResult createTopics(Collection<NewTopic> topics)</li>
+<li>删除主题: DeleteTopicsResult deleteTopics(Collection<String> topics)</li>
+<li>列出所有可用的主题: ListTopicsResult listTopics()</li>
+<li>查看主题信息: DescribeConfigsResult describeTopics(Collection<STring> topicNames)</li>
+<li>查询配置信息: DescribeConfigsResult describeConfigs(Collection<ConfigResource> resources)</li>
+<li>修改配置信息: AlertConfigsResult alterConfigs(Map<ConfigResource, Config> configs)</li>
+<li>增加分区: CreatePartitionsResult createPartitions(Map<String, NewPartitions> newPartitions)</li>
+</ol>
+<blockquote>
+<p>演示代码如下</p>
+</blockquote>
+<pre><code class="language-java">package org.example.admin;
+
+import org.apache.kafka.clients.admin.*;
+import org.apache.kafka.common.config.ConfigResource;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class MyAdminClient {
+
+    private static final String BROKER_LIST = &quot;localhost:19092&quot;;
+    private static final String TOPIC = &quot;DELETE_TOPIC&quot;;
+
+    private static final String DELETE_TOPIC = &quot;topic-demo&quot;;
+
+
+    public static void main(String[] args) {
+        Map&lt;String, Object&gt; map = new HashMap&lt;&gt;();
+        map.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, BROKER_LIST);
+        map.put(AdminClientConfig.REQUEST_TIMEOUT_MS_CONFIG, 30000);
+        map.put(AdminClientConfig.CLIENT_ID_CONFIG, &quot;admin.client&quot;);
+        try (AdminClient client = AdminClient.create(map)) {
+            createTopic(client);
+            listAllTopics(client);
+            deleteTopic(client);
+            describeConfig(client);
+            alterConfig(client);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    private static void listAllTopics(AdminClient client) throws Exception {
+        ListTopicsResult result = client.listTopics();
+        for (TopicListing tl : result.listings().get()) {
+            System.out.println(tl.toString());
+        }
+    }
+
+    private static void createTopic(AdminClient adminClient) throws Exception {
+        adminClient.createTopics(List.of(new NewTopic(TOPIC, 3, (short) 3))).all().get();
+    }
+
+    private static void deleteTopic(AdminClient adminClient) throws Exception {
+        adminClient.deleteTopics(List.of(DELETE_TOPIC)).all().get();
+    }
+
+    private static void describeConfig(AdminClient adminClient) throws Exception {
+        ConfigResource resource = new ConfigResource(ConfigResource.Type.TOPIC, TOPIC);
+        System.out.println(adminClient.describeConfigs(List.of(resource)).all().get().get(resource));
+    }
+
+    private static void alterConfig(AdminClient adminClient) throws Exception {
+        ConfigResource resource = new ConfigResource(ConfigResource.Type.TOPIC, TOPIC);
+        ConfigEntry entry = new ConfigEntry(&quot;cleanup.policy&quot;, &quot;compact&quot;);
+        AlterConfigOp config = new AlterConfigOp(entry, AlterConfigOp.OpType.SET);
+        Map&lt;ConfigResource, Collection&lt;AlterConfigOp&gt;&gt; configs = new HashMap&lt;&gt;();
+        configs.put(resource, List.of(config));
+        System.out.println(adminClient.incrementalAlterConfigs(configs).all().get());
+        ;
+    }
+
+}
+
+</code></pre>
               
             </div>
           </div><footer>
