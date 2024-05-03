@@ -926,7 +926,6 @@ public class MyAdminClient {
         Map&lt;ConfigResource, Collection&lt;AlterConfigOp&gt;&gt; configs = new HashMap&lt;&gt;();
         configs.put(resource, List.of(config));
         System.out.println(adminClient.incrementalAlterConfigs(configs).all().get());
-        ;
     }
 
 }
