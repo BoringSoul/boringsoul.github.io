@@ -1,0 +1,34 @@
+site_name: 安崽的笔记
+site_url: https://boringsoul.github.io
+site_author: andrew chung
+copyright: MIT License
+
+theme:
+  name: readthedocs
+  highlightjs: True
+  hljs_style: github
+  hljs_languages:
+    - java
+    - python
+  show_sidebar: False
+
+markdown_extensions:
+
+  - toc:
+
+        permalink: True
+        baselevel: 2
+        separator: "_"
+
+  - footnotes
+
+  - tables
+
+nav:
+  - "简介": ../
+
+  - "消息队列":
+    - "深入理解Kafka：核心设计与实践原理": "middleware/深入理解Kafka.md"
+  - "数据库相关":
+    - "高性能MySQL-第三版": "database/高性能MySQL.md"
+
