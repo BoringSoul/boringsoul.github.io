@@ -196,14 +196,72 @@
         </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#53">5.3 日志索引</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#531">5.3.1 偏移量索引</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#54">5.4 日志清理</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#55">5.5 磁盘存储</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#56">5.6 总结</a>
+    <li class="toctree-l4"><a class="reference internal" href="#532">5.3.2 时间戳索引</a>
     </li>
         </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#54">5.4 日志清理</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#541">5.4.1 日志删除</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#542">5.4.2 日志压缩</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#55">5.5 磁盘存储</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#551">5.5.1 页缓存</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#552_io">5.5.2 磁盘 I/O 流程</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#553">5.5.3 零拷贝</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#6">第6章 深入服务端</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#61">6.1 协议设计</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#62">6.2 时间轮</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#63">6.3 延时操作</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#64">6.4 控制器</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#641">6.4.1 控制器的选举及异常恢复</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#642">6.4.2 优雅关闭</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#65">6.5 参数解密</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#651_brokerid">6.5.1 broker.id</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#652_bootstrapservers">6.5.2 bootstrap.servers</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#653">6.5.3 服务端参数列表</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#7">第7章 深入客户端</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#8">第8章 可靠性探究</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#9_kafka">第9章 Kafka应用</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#10_kafka">第10章 Kafka监控</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#11_1">第11章 高级应用</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#12_kafkaspark">第12章 Kafka与Spark的集成</a>
     </li>
     </ul>
                   </li>
@@ -237,18 +295,18 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h2 id="-kafka">笔记-深入理解Kafka：核心设计与实践原理<a class="headerlink" href="#-kafka" title="Permanent link">&para;</a></h2>
+                <h2 id="-kafka">笔记-深入理解Kafka: 核心设计与实践原理<a class="headerlink" href="#-kafka" title="Permanent link">&para;</a></h2>
 <p>简单记下笔记</p>
 <h3 id="kafka">第一章 初识Kafka<a class="headerlink" href="#kafka" title="Permanent link">&para;</a></h3>
-<p>首先知道他是啥：</p>
+<p>首先知道他是啥: </p>
 <ul>
-<li>消息系统： 就是一个消息队列系统, 作用无非就那几个-解耦, 削峰、异步, 然后再加上自己的集群特性, 做到可扩展、可恢复</li>
-<li>持久化： log文件存消息</li>
-<li>流式处理平台：提供接口来做窗口、连接、变换和聚合等等的操作</li>
+<li>消息系统:  就是一个消息队列系统, 作用无非就那几个-解耦, 削峰、异步, 然后再加上自己的集群特性, 做到可扩展、可恢复</li>
+<li>持久化:  log文件存消息</li>
+<li>流式处理平台: 提供接口来做窗口、连接、变换和聚合等等的操作</li>
 </ul>
 <h4 id="11">1.1 基本概念<a class="headerlink" href="#11" title="Permanent link">&para;</a></h4>
 <blockquote>
-<p>看下图就好：</p>
+<p>看下图就好: </p>
 </blockquote>
 <p><img alt="Kafka 基本架构图" src="../assets/img/blog16949bd6279df106.png" /></p>
 <ul>
@@ -279,9 +337,9 @@
 <p>这里贴出最常见的几个参数说明一下, 配置的内容都是在 <em>config/server.properties</em> 里面, 3.x 版本的话, 如果要用 <em>kraft</em> 的话, 则看 <em>config/kraft/server.properties</em> 文件</p>
 </blockquote>
 <ul>
-<li><em>process.roles</em> : 进程的角色列表, 逗号分割, 默认：<em>broker,controller</em></li>
+<li><em>process.roles</em> : 进程的角色列表, 逗号分割, 默认: <em>broker,controller</em></li>
 <li><em>node.id</em> : 节点 <em>id</em>, 用来标识节点, 在日志可以用来排查问题</li>
-<li><em>listeners</em> : <em>broker</em> 监听客户端的协议+地址+端口,格式为 : 协议://地址:端口, 协议值为：<em>PLAINTEXT, SSL, SASL_SSL</em></li>
+<li><em>listeners</em> : <em>broker</em> 监听客户端的协议+地址+端口,格式为 : 协议://地址:端口, 协议值为: <em>PLAINTEXT, SSL, SASL_SSL</em></li>
 <li><em>log.dirs</em> : 持久化目录, <em>log.dirs</em> 优先级大于 <em>log.dir</em></li>
 </ul>
 <h3 id="_1">第二章 生产者<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h3>
@@ -450,7 +508,7 @@ public interface Partitioner extends Configurable, Closeable {
 <p>发送模式有三种: 发后即忘(<em>fire-and-forget</em>)、 同步 (<em>sync</em>)、 异步(<em>async</em>), 其实 <em>send</em> 返回的是 <em>Future</em> 对象, 所以传参肯定有 <em>Callback</em> 的入参, 要同步模式的话, 直接 <em>Future.get</em> 即可。
 这里讲讲增加可靠性的套路</p>
 <blockquote>
-<p>注意： 提高可靠性会导致性能下降</p>
+<p>注意:  提高可靠性会导致性能下降</p>
 </blockquote>
 <pre><code class="language-java">props.put(ProducerConfig.RETRIES_CONFIG, 10); // 增加重试次数
 props.put(ProducerConfig.ACKS_CONFIG, -1); //  确保所有副本有响应了才当成功
@@ -505,7 +563,7 @@ props.put(ProducerConfig.ACKS_CONFIG, -1); //  确保所有副本有响应了才
 <p>看下图就知道大概意思了</p>
 </blockquote>
 <p><img alt="消费者与消费组消费某个Topic的消息" src="../assets/img/3.1.png" /></p>
-<p>消费者与消费组、分区的关系就以下几点：</p>
+<p>消费者与消费组、分区的关系就以下几点: </p>
 <ol>
 <li>消费者是以分区为单位进行消费</li>
 <li>同一 <em>Topic</em> 下的消费组, 里面的消费者会均摊 <em>Topic</em> 内的 <em>partition</em>, 所以可能会出现 <em>partition</em> 不够分的情况</li>
@@ -1051,8 +1109,10 @@ public class MyAdminClient {
 <blockquote>
 <p>直接看图就得了, 根目录下的日志文件夹命名规则是 <em>\&lt;topic&gt;-\&lt;partition&gt;</em></p>
 </blockquote>
+<p><center></p>
 <p><img alt="Kafka 日志文件目录布局" src="../assets/img/5.2.png" /></p>
 <p><img alt="Kafka topic-partition布局" src="../assets/img/5.2.sub.jpg" /></p>
+<p></center></p>
 <h4 id="52">5.2 日志格式的演变<a class="headerlink" href="#52" title="Permanent link">&para;</a></h4>
 <blockquote>
 <p>朝着内容压缩, 属性扩展的方向演变</p>
@@ -1061,7 +1121,9 @@ public class MyAdminClient {
 <blockquote>
 <p>十分基础的设计, 只能说该有的都有了</p>
 </blockquote>
+<p><center></p>
 <p><img alt="日志格式v0版本" src="../assets/img/5.2.1.jpg" /></p>
+<p></center></p>
 <p>大概抄一下字段的解释</p>
 <ul>
 <li><em>crc32</em> (4B) : crc32 校验, 校验 <em>magic - value</em></li>
@@ -1073,13 +1135,17 @@ public class MyAdminClient {
 <li><em>value</em> : 消息体</li>
 </ul>
 <h5 id="522_v1">5.2.2 v1版本<a class="headerlink" href="#522_v1" title="Permanent link">&para;</a></h5>
+<p><center></p>
 <p><img alt="日志格式v1版本" src="../assets/img/5.2.2.jpg" /></p>
+<p></center></p>
 <ul>
 <li><em>attribute</em> (1B) : 消息属性, 低3位压缩类型: 0 没有压缩 /1 GZIP /2 SNAPPY /3 LZ4, 第四位 0 表示 <em>timestamp</em> 类型为 <em>CreateTime</em>, <em>而1表示timestamp</em> 类型为 <em>LogAppendTime</em>, 其他位保留</li>
 <li><em>timestamp</em> (8B) : 时间戳, 表示哪种时间看上面的属性</li>
 </ul>
 <h5 id="523">5.2.3 消息压缩<a class="headerlink" href="#523" title="Permanent link">&para;</a></h5>
+<p><center></p>
 <p><img alt="消息压缩" src="../assets/img/5.2.3-1.jpg" /></p>
+<p></center></p>
 <ul>
 <li>分两层消息, 叫做外层消息和内层消息</li>
 <li>外层消息的 <em>offset</em> = <em>absolute offset</em> = 内层消息的最后一条消息</li>
@@ -1088,36 +1154,210 @@ public class MyAdminClient {
 <blockquote>
 <p>压缩情况的时间戳含义又有区别, 解析如下</p>
 </blockquote>
-<p>外层消息的timestamp设置为：</p>
+<p>外层消息的timestamp设置为: </p>
 <ul>
 <li>
-<p>如果timestamp类型是CreateTime，那么设置的是内层消息中最大的时间戳。</p>
+<p>如果timestamp类型是CreateTime, 那么设置的是内层消息中最大的时间戳。</p>
 </li>
 <li>
-<p>如果timestamp类型是LogAppendTime，那么设置的是Kafka服务器当前的时间戳。</p>
+<p>如果timestamp类型是LogAppendTime, 那么设置的是Kafka服务器当前的时间戳。</p>
 </li>
 </ul>
-<p>内层消息的timestamp设置为：</p>
+<p>内层消息的timestamp设置为: </p>
 <ul>
 <li>
-<p>如果外层消息的timestamp类型是CreateTime，那么设置的是生产者创建消息时的时间戳。</p>
+<p>如果外层消息的timestamp类型是CreateTime, 那么设置的是生产者创建消息时的时间戳。</p>
 </li>
 <li>
-<p>如果外层消息的timestamp类型是LogAppendTime，那么所有内层消息的时间戳都会被忽略。</p>
+<p>如果外层消息的timestamp类型是LogAppendTime, 那么所有内层消息的时间戳都会被忽略。</p>
 </li>
 </ul>
 <h5 id="524">5.2.4 变长字段<a class="headerlink" href="#524" title="Permanent link">&para;</a></h5>
-<h5 id="525_v2">5.2.5 v2版本<a class="headerlink" href="#525_v2" title="Permanent link">&para;</a></h5>
 <blockquote>
 <p><em>Kafka 3.x</em> 的消息格式只支持这个消息格式, 且这个版本多了 <em>Varints</em> 和 <em>ZigZag</em> 编码</p>
 </blockquote>
 <ul>
-<li>Varints 表示方法: 每个字节都有一个位于最高位的msb位（most significant bit），除最后一个字节外，其余msb位都设置为1，最后一个字节的msb位为0, Varints中采用的是小端字节序, 即最小的字节放在最前面</li>
+<li>
+<p><em>ZigZag</em> 编码的算法比较简答, <em>sint32</em> 的编码 =&gt; (n &lt;&lt; 1) ^ (n &gt;&gt; 31), <em>sint64</em> 的则是 (n &lt;&lt; 1) ^ (n &gt;&gt; 63), 主要的作用是压缩负数编码长度</p>
+</li>
+<li>
+<p><em>Varints</em> 表示方法: 每个字节都有一个位于最高位的 <em>msb</em> 位（<em>most significant bit</em>）, 除最后一个字节外, 其余 <em>msb</em> 位都设置为1, 最后一个字节的 <em>msb</em> 位为0, <em>Varints</em> 中采用的是小端字节序, 即最小的字节放在最前面, 这个表示法可能会让部分数字的编码长度变大</p>
+</li>
+<li>
+<p>算法流程如下</p>
+</li>
+</ul>
+<pre><code>假设为65 =&gt; 0100 0001
+
+先 *ZigZag* =&gt; 1000 0010 ^ 0000 0000 = 1000 0010
+因为低7位有效, 所以补位变成 000 0001 000 0010
+低位在前, 000 0010 000 0001, 最后补个 *msb*, 变成 1000 0010 0000 0001
+</code></pre>
+<h5 id="525_v2">5.2.5 v2版本<a class="headerlink" href="#525_v2" title="Permanent link">&para;</a></h5>
+<p><center></p>
+<p><img alt="v2版本" src="../assets/img/5.24-1.jpg" /></p>
+<p>v2版本
+</center></p>
+<ul>
+<li>
+<p><em>length</em>: 消息总长度。</p>
+</li>
+<li>
+<p><em>attributes</em>: 弃用, 但还是在消息格式中占据1B的大小, 以备未来的格式扩展。</p>
+</li>
+<li>
+<p><em>timestamp delta</em>: 时间戳增量。通常一个 <em>timestamp</em> 需要占用8个字节, 如果像这里一样保存与 <em>RecordBatch</em> 的起始时间戳的差值, 则可以进一步节省占用的字节数。</p>
+</li>
+<li>
+<p><em>offset delta</em>: 位移增量。保存与 <em>RecordBatch</em> 起始位移的差值, 可以节省占用的字节数。</p>
+</li>
+<li>
+<p><em>headers</em>: 这个字段用来支持应用级别的扩展, 而不需要像 <em>v0</em> 和 <em>v1</em> 版本一样不得不将一些应用级别的属性值嵌入消息体。<em>Header</em> 的格式如图5-7最右部分所示, 包含 <em>key</em> 和 <em>value</em>, 一个 <em>Record</em> 里面可以包含0至多个 <em>Header</em>。</p>
+</li>
+<li>
+<p><em>first offset</em>: 表示当前 <em>RecordBatch</em> 的起始位移。</p>
+</li>
+<li>
+<p><em>length</em>: 计算从 <em>partition leader epoch</em> 字段开始到末尾的长度。</p>
+</li>
+<li>
+<p><em>partition leader epoch</em>: 分区 <em>leader</em> 纪元, 可以看作分区 <em>leader</em> 的版本号或更新次数, 详细内容请参考8.1.4节。</p>
+</li>
+<li>
+<p><em>magic</em>: 消息格式的版本号, 对v2版本而言, magic 等于2。</p>
+</li>
+<li>
+<p><em>attributes</em>: 消息属性, 注意这里占用了两个字节。低3位表示压缩格式, 可以参考 <em>v0</em> 和 <em>v1</em> ；第4位表示时间戳类型；第5位表示此 <em>RecordBatch</em> 是否处于事务中, 0表示非事务, 1表示事务。第6位表示是否是控制消息（<em>ControlBatch</em>）, 0表示非控制消息, 而1表示是控制消息, 控制消息用来支持事务功能, 详细内容请参考7.4节。</p>
+</li>
+<li>
+<p><em>last offset delta</em>: <em>RecordBatch</em> 中最后一个 <em>Record</em> 的 <em>offset</em> 与 <em>first offset</em> 的差值。主要被 <em>broker</em> 用来确保 <em>RecordBatch</em> 中 <em>Record</em> 组装的正确性。</p>
+</li>
+<li>
+<p><em>first timestamp</em>: <em>RecordBatch</em> 中第一条 <em>Record</em> 的时间戳。</p>
+</li>
+<li>
+<p><em>max timestamp</em>: <em>RecordBatch</em> 中最大的时间戳, 一般情况下是指最后一个 Record 的时间戳, 和 <em>last offset delta</em> 的作用一样, 用来确保消息组装的正确性。</p>
+</li>
+<li>
+<p><em>producer id</em>: PID, 用来支持幂等和事务, 详细内容请参考7.4节。</p>
+</li>
+<li>
+<p><em>producer epoch</em>: 和 <em>producer id</em> 一样, 用来支持幂等和事务, 详细内容请参考7.4节。</p>
+</li>
+<li>
+<p><em>first sequence</em>: 和 <em>producer id</em>、<em>producer epoch</em> 一样, 用来支持幂等和事务, 详细内容请参考7.4节。</p>
+</li>
+<li>
+<p><em>records count</em>: <em>RecordBatch</em> 中 <em>Record</em> 的个数。</p>
+</li>
 </ul>
 <h4 id="53">5.3 日志索引<a class="headerlink" href="#53" title="Permanent link">&para;</a></h4>
+<p>主要讲 <em>.index</em> 文件和 <em>.timeindex</em>, <em>.index</em> 文件是通过消息偏移量找消息, <em>.timeindex</em> 则是根据指定时间戳找时间</p>
+<ol>
+<li>首先, 每当写入的消息量 &gt; <em>log.index.interval.bytes</em>, 就会新增索引项</li>
+<li>符合以下其中一个条件, 日志文件都会切分</li>
+<li>日志分段文件 &gt; <em>broker</em> 中的 <em>log.segment.bytes</em> (默认1073741824, 1 <em>GB</em>)</li>
+<li>系统当前时间 - 日志分段消息最大时间戳 &gt; <em>log.roll.ms/log.roll.hours</em>, 此处 <em>log.roll.ms</em> 优先级大点 (默认只设置 <em>log.roll.hours = 7</em>)</li>
+<li><em>.index</em> 文件大小 or <em>.timeindex</em> 文件大小 &gt; <em>log.index.size.max.bytes</em> (默认 10485760=10 <em>MB</em>)</li>
+<li>追加消息 <em>offset - baseOffset &gt; Integer.MAX</em></li>
+</ol>
+<h5 id="531">5.3.1 偏移量索引<a class="headerlink" href="#531" title="Permanent link">&para;</a></h5>
+<p><center></p>
+<p><img alt="16进制.index文件编码" src="../assets/img/5.3.1-1.jpg" /></p>
+<p>8 * 16 = 4 * 32 刚好 int32, 前8后8看就得了</p>
+<p><img alt="16进制.index文件解码" src="../assets/img/5.3.1-2.jpg" /></p>
+<p></center></p>
+<p>前4个字节表示相对偏移量, 后4个字节表示消息在日志分段文件对应的物理位置</p>
+<p>查找方法: 二分法 + 跳表</p>
+<p><center></p>
+<p><img alt="偏移量索引示意图" src="../assets/img/5.3.1-3.jpg" /></p>
+<p>偏移量索引示意图</p>
+<p><img alt="16进制.index文件解码" src="../assets/img/5.3.1-4.jpg" /></p>
+<p>跳表查找偏移量所在的日志分段, 计算相对偏移量, 最后再用前面图的方法, 就可以找到消息</p>
+<p></center></p>
+<h5 id="532">5.3.2 时间戳索引<a class="headerlink" href="#532" title="Permanent link">&para;</a></h5>
+<p><center></p>
+<p><img alt="时间戳索引格式" src="../assets/img/5.3.2.jpg" /></p>
+<p>64字节 +  32字节</p>
+<p><img alt="查找方式" src="../assets/img/5.3.2-2.jpg" /></p>
+<p></center></p>
+<ol>
+<li>
+<p>将 targetTimeStamp 和每个日志分段中的最大时间戳largestTimeStamp逐一对比，直到找到不小于 targetTimeStamp 的 largestTimeStamp 所对应的日志分段。日志分段中的largestTimeStamp的计算是先查询该日志分段所对应的时间戳索引文件，找到最后一条索引项，若最后一条索引项的时间戳字段值大于0，则取其值，否则取该日志分段的最近修改时间。</p>
+</li>
+<li>
+<p>找到相应的日志分段之后，在时间戳索引文件中使用二分查找算法查找到不大于targetTimeStamp的最大索引项，即[1526384718283，28]，如此便找到了一个相对偏移量28。</p>
+</li>
+<li>
+<p>在偏移量索引文件中使用二分算法查找到不大于28的最大索引项，即[26，838]。</p>
+</li>
+<li>
+<p>从步骤1中找到日志分段文件中的838的物理位置开始查找不小于targetTimeStamp的消息。</p>
+</li>
+</ol>
 <h4 id="54">5.4 日志清理<a class="headerlink" href="#54" title="Permanent link">&para;</a></h4>
+<p>日志清理策略有2, 日志删除和日志压缩, 通过 <em>log.cleanup.policy</em> 进行设置, 默认是 <em>delete</em>, 可以同时支持两种策略。删除策略是根据一定规则去删数据, 而压缩则是同一个 <em>key</em> 下保留最新值</p>
+<h5 id="541">5.4.1 日志删除<a class="headerlink" href="#541" title="Permanent link">&para;</a></h5>
+<ol>
+<li>基于时间: 通过broker端参数 <em>log.retention.hours</em>、<em>log.retention.minutes</em> 和 <em>log.retention.ms</em> 来配置, 优先级粒度越小越大, 默认值 7 天, 只设置小时</li>
+<li>基于日志大小: 根据 <em>log.retention.bytes</em> 进行设置, 指的是总大小, 默认 1073741824，即 <em>1GB</em></li>
+<li>基于日志起始偏移量: 通过 <em>DeleteRecordsRequest</em> 请求, 然后判断日志分段的起始偏移量是否小于 <em>logStartOffset</em></li>
+</ol>
+<h5 id="542">5.4.2 日志压缩<a class="headerlink" href="#542" title="Permanent link">&para;</a></h5>
+<ol>
+<li>日志压缩跟 <em>Redis</em> 的 <em>RDB</em> 模式有点像, 可以提高起始加载的速度</li>
+<li><em>clener-offset-checkpoint</em> 文件会把 <em>log</em> 文件分为 <em>clean</em> 和 <em>dirty</em> 两部分(文件记录的是 <em>firstDirytOffset</em>), 如果客户端能赶上 <em>dirty</em> 部分, 就  能读到日志所有消息了</li>
+<li>清理时 <em>broker</em> 会开线程来清, 开多少 <em>log.cleaner.thread</em> 决定</li>
+<li>污浊率决定日志文件清理的优先级, 计算公式 dirtyRatio = dirtyBytes / (cleanBytes + dirtyBytes), 可以通过 <em>log.cleaner.min.cleanable.ratio</em> 控制触发压缩的起始比例</li>
+<li><em>__consumer_offsets</em> 也是用日志压缩策略进行保存的</li>
+<li>清理算法很简单, 用一个 <em>SkimpyOffsetMap</em> 记录 <em>key</em> 和 <em>offset</em>, 遍历两次 <em>log</em>, 第一次记录最大的 <em>offset</em>, 第二次开始删除</li>
+<li>墓碑日志 (<em>key != null &amp;&amp; value == null</em>) 清理时机 = 该日志分段的 <em>lastModifiedTime</em> + <em>deleteHorizonMs</em> (<em>broker</em> 的 <em>log.cleaner.delete.retention.ms</em>, 默认86400000, 即24小时) &lt; <em>clean</em> 区域的 <em>lastModifiedTime</em></li>
+<li>为防止 <em>compact</em> 出现碎片，每次 <em>compact</em> 会把多个文件分成一组, 每组文件大小不超过 <em>log.segment.bytes</em></li>
+<li>每个日志分组清理后会变成 <em>log.clean</em> 文件, 继续 <em>compact</em> 就变成 <em>log.swap</em>, 最后删除原来日志, <em>log.swap</em> 就去掉 <em>swap</em> 后缀, 完成压缩</li>
+</ol>
+<p><center></p>
+<p><img alt="日志压缩" src="../assets/img/5.4.2.jpg" /></p>
+<p></center></p>
 <h4 id="55">5.5 磁盘存储<a class="headerlink" href="#55" title="Permanent link">&para;</a></h4>
-<h4 id="56">5.6 总结<a class="headerlink" href="#56" title="Permanent link">&para;</a></h4>
+<blockquote>
+<p>讲述 Kafka 在落盘时候的优化</p>
+</blockquote>
+<h5 id="551">5.5.1 页缓存<a class="headerlink" href="#551" title="Permanent link">&para;</a></h5>
+<p>Kafka 使用了大量页缓存, 先把数据写到页缓存, 然后再根据配置 fsync 异步落盘, 落盘可以用 <em>log.flush.interval.messages、log.flush.interval.ms</em> 控制</p>
+<h5 id="552_io">5.5.2 磁盘 I/O 流程<a class="headerlink" href="#552_io" title="Permanent link">&para;</a></h5>
+<p><center></p>
+<p><img alt="磁盘IO流程" src="../assets/img/5.5.2.jpg" /></p>
+<p></center></p>
+<p>· 写操作：用户调用fwrite把数据写入C库标准IObuffer后就返回，即写操作通常是异步操作；数据写入C库标准IObuffer后，不会立即刷新到磁盘，会将多次小数据量相邻写操作先缓存起来合并，最终调用write函数一次性写入（或者将大块数据分解多次write 调用）页缓存；数据到达页缓存后也不会立即刷新到磁盘，内核有 pdflush 线程在不停地检测脏页，判断是否要写回到磁盘，如果是则发起磁盘I/O请求。</p>
+<p>· 读操作：用户调用fread到C库标准IObuffer中读取数据，如果成功则返回，否则继续；到页缓存中读取数据，如果成功则返回，否则继续；发起 I/O 请求，读取数据后缓存buffer和C库标准IObuffer并返回。可以看出，读操作是同步请求。</p>
+<p>· I/O请求处理：通用块层根据I/O请求构造一个或多个bio结构并提交给调度层；调度器将 bio 结构进行排序和合并组织成队列且确保读写操作尽可能理想：将一个或多个进程的读操作合并到一起读，将一个或多个进程的写操作合并到一起写，尽可能变随机为顺序（因为随机读写比顺序读写要慢），读必须优先满足，而写也不能等太久。</p>
+<p>I/O 调度分以下几种
+1. NOOP: 简单的FIFO队列
+2. CFQ: 按照I/O请求的地址进行排序, 每个进程单独创建一个队列来管理该进程所产生的请求, 根据时间片去调度，但有可能会饿死
+3. DEADLINE: 除了CFQ本身具有的I/O排序队列，DEADLINE额外分别为读I/O和写I/O提供了FIFO队列。读FIFO队列的最大等待时间为500ms，写FIFO队列的最大等待时间为5s, READ &gt; WRITE &gt; CFQ
+4. ANTICIPATORY: 在DEADLINE的基础上，为每个读I/O都设置了6ms的等待时间窗口。如果在6ms内OS收到了相邻位置的读I/O请求，就可以立即满足。ANTICIPATORY算法通过增加等待时间来获得更高的性能，假设一个块设备只有一个物理查找磁头（例如一个单独的SATA硬盘），将多个随机的小写入流合并成一个大写入流（相当于将随机读写变顺序读写），通过这个原理来使用读取/写入的延时换取最大的读取/写入吞吐量。适用于大多数环境，特别是读取/写入较多的环境。</p>
+<h5 id="553">5.5.3 零拷贝<a class="headerlink" href="#553" title="Permanent link">&para;</a></h5>
+<p>对 <em>Linux</em> 操作系统而言，零拷贝技术依赖于底层的 <em>sendfile()</em> 方法实现。对应于 <em>Java</em> 语言，<em>FileChannal.transferTo()</em> 方法的底层实现就是<em>sendfile()</em> 方法</p>
+<p><center></p>
+<p><img alt="零拷贝" src="../assets/img/5.5.2.jpg" /></p>
+<p></center></p>
+<h3 id="6">第6章 深入服务端<a class="headerlink" href="#6" title="Permanent link">&para;</a></h3>
+<h4 id="61">6.1 协议设计<a class="headerlink" href="#61" title="Permanent link">&para;</a></h4>
+<h4 id="62">6.2 时间轮<a class="headerlink" href="#62" title="Permanent link">&para;</a></h4>
+<h4 id="63">6.3 延时操作<a class="headerlink" href="#63" title="Permanent link">&para;</a></h4>
+<h4 id="64">6.4 控制器<a class="headerlink" href="#64" title="Permanent link">&para;</a></h4>
+<h5 id="641">6.4.1 控制器的选举及异常恢复<a class="headerlink" href="#641" title="Permanent link">&para;</a></h5>
+<h5 id="642">6.4.2 优雅关闭<a class="headerlink" href="#642" title="Permanent link">&para;</a></h5>
+<h4 id="65">6.5 参数解密<a class="headerlink" href="#65" title="Permanent link">&para;</a></h4>
+<h5 id="651_brokerid">6.5.1 broker.id<a class="headerlink" href="#651_brokerid" title="Permanent link">&para;</a></h5>
+<h5 id="652_bootstrapservers">6.5.2 bootstrap.servers<a class="headerlink" href="#652_bootstrapservers" title="Permanent link">&para;</a></h5>
+<h5 id="653">6.5.3 服务端参数列表<a class="headerlink" href="#653" title="Permanent link">&para;</a></h5>
+<h3 id="7">第7章 深入客户端<a class="headerlink" href="#7" title="Permanent link">&para;</a></h3>
+<h3 id="8">第8章 可靠性探究<a class="headerlink" href="#8" title="Permanent link">&para;</a></h3>
+<h3 id="9_kafka">第9章 Kafka应用<a class="headerlink" href="#9_kafka" title="Permanent link">&para;</a></h3>
+<h3 id="10_kafka">第10章 Kafka监控<a class="headerlink" href="#10_kafka" title="Permanent link">&para;</a></h3>
+<h3 id="11_1">第11章 高级应用<a class="headerlink" href="#11_1" title="Permanent link">&para;</a></h3>
+<h3 id="12_kafkaspark">第12章 Kafka与Spark的集成<a class="headerlink" href="#12_kafkaspark" title="Permanent link">&para;</a></h3>
               
             </div>
           </div><footer>
